@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Cálculo mental</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Almarai', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  html, body { width: 1200px; height: 675px; overflow: hidden; background: #0c0c0c; }
+  .stage { position: relative; width: 1200px; height: 675px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 54px; }
+  .grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(225,224,204,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(225,224,204,0.045) 1px, transparent 1px); background-size: 60px 60px; }
+  .eqwrap { position: relative; width: 900px; height: 190px; }
+  .eq { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 30px; opacity: 0; animation: eqCycle 16s cubic-bezier(0.16,1,0.3,1) infinite; }
+  .eq:nth-child(1) { animation-delay: 0s; }
+  .eq:nth-child(2) { animation-delay: 4s; }
+  .eq:nth-child(3) { animation-delay: 8s; }
+  .eq:nth-child(4) { animation-delay: 12s; }
+  .n { font-size: 112px; font-weight: 800; letter-spacing: -0.04em; color: #E1E0CC; }
+  .op { font-size: 84px; font-weight: 700; color: oklch(0.84 0.16 88); }
+  .eqs { font-size: 84px; font-weight: 400; color: rgba(225,224,204,0.35); }
+  .res { font-size: 112px; font-weight: 800; letter-spacing: -0.04em; color: oklch(0.84 0.16 88); opacity: 0; animation: resIn 16s linear infinite; }
+  .eq:nth-child(1) .res { animation-delay: 0s; }
+  .eq:nth-child(2) .res { animation-delay: 4s; }
+  .eq:nth-child(3) .res { animation-delay: 8s; }
+  .eq:nth-child(4) .res { animation-delay: 12s; }
+  .chips { display: flex; gap: 16px; }
+  .chip { width: 74px; height: 74px; border-radius: 16px; border: 1px solid rgba(225,224,204,0.14); display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: 700; color: rgba(225,224,204,0.4); background: rgba(225,224,204,0.03); animation: chipOn 16s linear infinite; }
+  .chip:nth-child(1) { animation-delay: 0s; }
+  .chip:nth-child(2) { animation-delay: 4s; }
+  .chip:nth-child(3) { animation-delay: 8s; }
+  .chip:nth-child(4) { animation-delay: 12s; }
+  .bar { width: 900px; height: 3px; background: rgba(225,224,204,0.08); border-radius: 999px; overflow: hidden; }
+  .bar span { display: block; height: 100%; background: oklch(0.84 0.16 88); animation: barFill 16s linear infinite; }
+  @keyframes eqCycle {
+    0% { opacity: 0; transform: translateY(26px); }
+    3% { opacity: 1; transform: translateY(0); }
+    22% { opacity: 1; transform: translateY(0); }
+    25% { opacity: 0; transform: translateY(-26px); }
+    100% { opacity: 0; transform: translateY(-26px); }
+  }
+  @keyframes resIn {
+    0%, 9% { opacity: 0; transform: scale(0.82); }
+    13%, 22% { opacity: 1; transform: scale(1); }
+    25%, 100% { opacity: 0; transform: scale(1); }
+  }
+  @keyframes chipOn {
+    0% { color: rgba(225,224,204,0.4); border-color: rgba(225,224,204,0.14); background: rgba(225,224,204,0.03); }
+    3%, 22% { color: #0c0c0c; border-color: oklch(0.84 0.16 88); background: oklch(0.84 0.16 88); }
+    25%, 100% { color: rgba(225,224,204,0.4); border-color: rgba(225,224,204,0.14); background: rgba(225,224,204,0.03); }
+  }
+  @keyframes barFill { 0% { width: 0; } 100% { width: 100%; } }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="grid"></div>
+    <div class="eqwrap">
+      <div class="eq"><span class="n">18</span><span class="op">+</span><span class="n">27</span><span class="eqs">=</span><span class="res">45</span></div>
+      <div class="eq"><span class="n">96</span><span class="op">−</span><span class="n">38</span><span class="eqs">=</span><span class="res">58</span></div>
+      <div class="eq"><span class="n">7</span><span class="op">×</span><span class="n">8</span><span class="eqs">=</span><span class="res">56</span></div>
+      <div class="eq"><span class="n">54</span><span class="op">÷</span><span class="n">9</span><span class="eqs">=</span><span class="res">6</span></div>
+    </div>
+    <div class="chips">
+      <div class="chip">+</div>
+      <div class="chip">−</div>
+      <div class="chip">×</div>
+      <div class="chip">÷</div>
+    </div>
+    <div class="bar"><span></span></div>
+  </div>
+</body>
+</html>
