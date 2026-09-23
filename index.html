@@ -108,9 +108,8 @@ section{position:relative}
 /* ---------- hero ---------- */
 .hero{height:100svh;min-height:640px;padding:12px;display:flex}
 .hero__frame{position:relative;flex:1;border-radius:clamp(18px,2.4vw,34px);overflow:hidden;background:#030303;will-change:transform}
-.hero__video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.0;transition:opacity 1.6s ease;mix-blend-mode:screen}
-.hero__video.is-ready{opacity:.42}
-.hero__gl{position:absolute;inset:0;width:100%;height:100%}
+.hero__video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s ease}
+.hero__video.is-ready{opacity:1}
 .hero__shade{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 30%,transparent 30%,rgba(0,0,0,.65) 100%),linear-gradient(to bottom,rgba(0,0,0,.25),transparent 35%,rgba(0,0,0,.7))}
 .hero__content{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:clamp(22px,4vw,56px)}
 .hero__top{position:absolute;top:clamp(90px,12vh,130px);left:clamp(22px,4vw,56px);right:clamp(22px,4vw,56px);display:flex;justify-content:space-between;gap:20px;font-size:11px;letter-spacing:.18em;color:var(--ink2);text-transform:uppercase}
@@ -332,7 +331,6 @@ section{position:relative}
 <!-- ============ HERO ============ -->
 <section id="inicio" class="hero">
   <div class="hero__frame" id="heroFrame">
-    <canvas class="hero__gl" id="heroGL"></canvas>
     <video class="hero__video" id="heroVideo" muted playsinline loop preload="auto" data-src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_170732_8a9ccda6-5cff-4628-b164-059c500a2b41.mp4"></video>
     <div class="hero__shade"></div>
     <div class="hero__top" data-hero-fade>
@@ -697,74 +695,10 @@ function canvasLoop(canvas, opts) {
   requestAnimationFrame(frame);
 }
 
-/* ---------- HERO: WebGL flowing field ---------- */
-function heroShader() {
-  const cv = $('#heroGL');
-  const gl = cv.getContext('webgl', { antialias: false, premultipliedAlpha: false });
-  if (!gl) { cv.style.background = 'radial-gradient(80% 70% at 60% 40%, #6b3a14, #050505 70%)'; return; }
-  const vs = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
-  const fs = `precision highp float;
-uniform vec2 r;uniform float t;uniform float s;uniform vec2 m;
-float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
-return mix(mix(h(i),h(i+vec2(1.,0.)),f.x),mix(h(i+vec2(0.,1.)),h(i+vec2(1.,1.)),f.x),f.y);}
-float fbm(vec2 p){float v=0.,a=.5;mat2 R=mat2(.8,.6,-.6,.8);for(int i=0;i<5;i++){v+=a*n(p);p=R*p*2.03;a*=.5;}return v;}
-void main(){
-  vec2 uv=(gl_FragCoord.xy-.5*r)/r.y;
-  uv+=(m-.5)*vec2(.18,-.18);
-  float tt=t*.055;
-  vec2 p=uv*(1.35+s*1.1)+vec2(0.,s*1.4);
-  vec2 q=vec2(fbm(p+tt),fbm(p+vec2(5.2,1.3)-tt));
-  vec2 w=vec2(fbm(p+3.*q+vec2(1.7,9.2)+tt*1.6+s*.8),fbm(p+3.*q+vec2(8.3,2.8)-tt*1.2));
-  float f=fbm(p+3.4*w);
-  vec3 c=mix(vec3(.012,.01,.008),vec3(.19,.08,.025),smoothstep(.25,.62,f));
-  c=mix(c,vec3(.91,.56,.22),smoothstep(.56,.86,f)*(.65+.35*length(q)));
-  c=mix(c,vec3(.95,.86,.62),smoothstep(.82,1.02,f)*.55);
-  float band=fract(f*7.-tt*3.);
-  c+=smoothstep(.035,0.,abs(band-.5)-.465)*vec3(.95,.62,.28)*.16*smoothstep(.35,.7,f);
-  float v=1.-smoothstep(.35,1.35,length(uv*vec2(.85,1.)));
-  c*=v*(1.-s*.55);
-  c+=(h(gl_FragCoord.xy+fract(t))-.5)*.035;
-  gl_FragColor=vec4(c,1.);
-}`;
-  const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); return o; };
-  const pr = gl.createProgram();
-  gl.attachShader(pr, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, fs));
-  gl.linkProgram(pr);
-  if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) return;
-  gl.useProgram(pr);
-  const b = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, b);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
-  const loc = gl.getAttribLocation(pr, 'p');
-  gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-  const U = { r: gl.getUniformLocation(pr, 'r'), t: gl.getUniformLocation(pr, 't'), s: gl.getUniformLocation(pr, 's'), m: gl.getUniformLocation(pr, 'm') };
-  const scale = innerWidth < 800 ? 0.5 : 0.6; // render at reduced res, upscale via CSS
-  const resize = () => { cv.width = Math.round(cv.clientWidth * scale); cv.height = Math.round(cv.clientHeight * scale); gl.viewport(0, 0, cv.width, cv.height); };
-  new ResizeObserver(resize).observe(cv); resize();
-  let on = true, sm = { x: .5, y: .5 }, ss = 0;
-  new IntersectionObserver(([e]) => { on = e.isIntersecting; }).observe(cv);
-  const t0 = performance.now();
-  const frame = (now) => {
-    if (on) {
-      sm.x += (mouse.x - sm.x) * 0.04; sm.y += (mouse.y - sm.y) * 0.04;
-      ss += (Math.min(1, scrollY / innerHeight) - ss) * 0.1;
-      gl.uniform2f(U.r, cv.width, cv.height);
-      gl.uniform1f(U.t, reduce ? 20 : (now - t0) / 1000);
-      gl.uniform1f(U.s, ss);
-      gl.uniform2f(U.m, sm.x, sm.y);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-    }
-    requestAnimationFrame(frame);
-  };
-  requestAnimationFrame(frame);
-}
-heroShader();
-
-/* hero video as an extra glow layer (only once it can play) */
+/* hero video: fades in once it can play */
 const hv = $('#heroVideo');
-if (hv && !reduce && !navigator.connection?.saveData) {
-  hv.addEventListener('canplay', () => { hv.classList.add('is-ready'); hv.play().catch(() => {}); }, { once: true });
+if (hv) {
+  hv.addEventListener('canplay', () => { hv.classList.add('is-ready'); if (!reduce) hv.play().catch(() => {}); }, { once: true });
   hv.src = hv.dataset.src;
 }
 
