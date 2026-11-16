@@ -160,13 +160,13 @@ function frame() {
   if (document.hidden) return;
   const time = reduce ? 4 : clock.getElapsedTime();
   const target = stageFloat();
-  stageSmooth += (target - stageSmooth) * (reduce ? 1 : .09);
+  stageSmooth += (target - stageSmooth) * (reduce ? 1 : .04);
   const a = Math.min(STAGES.length - 1, Math.floor(stageSmooth)), b = Math.min(STAGES.length - 1, a + 1);
   // hold each formation, transition in the middle of the boundary
   const t = Math.min(1, Math.max(0, (stageSmooth - a - .12) / .76));
   const A = STAGES[a], B = STAGES[b], FA = FORMS[A.f], FB = FORMS[B.f];
   burst += (burstTarget - burst) * .07;
-  sm.x += (mouse.x - sm.x) * .05; sm.y += (mouse.y - sm.y) * .05;
+  sm.x += (mouse.x - sm.x) * .03; sm.y += (mouse.y - sm.y) * .03;
 
   const name = t > .08 && t < .92 && A.name !== B.name ? 'RECONFIGURANDO' : (t < .5 ? A : B).name;
   if (name !== lastName && hudState) { hudState.textContent = name; lastName = name; }
@@ -180,24 +180,26 @@ function frame() {
   const side = narrow ? 0 : 1;
   group.position.set(lerp(A.x, B.x, te) * side, lerp(A.y, B.y, te) * (narrow ? .4 : 1) + (narrow ? 1.5 : 0), 0);
   group.scale.setScalar(lerp(A.s, B.s, te) * (narrow ? .62 : 1));
+  // gentle bounded sway instead of continuous spin, so a stage change never whips the model around
+  const sway = Math.sin(time * .22) * 2.2;
   group.rotation.set(
-    lerp(A.rot[0] + A.spin[0] * time, B.rot[0] + B.spin[0] * time, te) + sm.y * .25,
-    lerp(A.rot[1] + A.spin[1] * time, B.rot[1] + B.spin[1] * time, te) + sm.x * .35,
-    lerp(A.rot[2] + A.spin[2] * time, B.rot[2] + B.spin[2] * time, te)
+    lerp(A.rot[0] + A.spin[0] * sway, B.rot[0] + B.spin[0] * sway, te) + sm.y * .1,
+    lerp(A.rot[1] + A.spin[1] * sway, B.rot[1] + B.spin[1] * sway, te) + sm.x * .14,
+    lerp(A.rot[2] + A.spin[2] * sway, B.rot[2] + B.spin[2] * sway, te)
   );
 
   const same = FA === FB;
   for (let i = 0; i < N; i++) {
     const r = R[i];
     // staggered per-part timing: parts leave and arrive one after another
-    const ti = same ? 0 : ease(Math.min(1, Math.max(0, t * 1.7 - r.a * .7)));
+    const ti = same ? 0 : ease(Math.min(1, Math.max(0, t * 1.35 - r.a * .35)));
     pA.fromArray(FA.pos, i * 3); qA.fromArray(FA.quat, i * 4); sA.fromArray(FA.scl, i * 3);
     if (!same) {
       pB.fromArray(FB.pos, i * 3); qB.fromArray(FB.quat, i * 4); sB.fromArray(FB.scl, i * 3);
       pA.lerp(pB, ti); qA.slerp(qB, ti); sA.lerp(sB, ti);
       const arc = Math.sin(Math.PI * ti);
-      pA.addScaledVector(r.dir, arc * 2.2);
-      qA.multiply(qB.setFromAxisAngle(r.dir, arc * (r.b - .5) * 5));
+      pA.addScaledVector(r.dir, arc * .7);
+      qA.multiply(qB.setFromAxisAngle(r.dir, arc * (r.b - .5) * 1.1));
     }
     if (burst > .001) { pA.multiplyScalar(1 + burst * (.6 + r.b * 1.6)); pA.addScaledVector(r.dir, burst * 2.5); qA.multiply(qB.setFromAxisAngle(r.dir, burst * (r.a - .5) * 4)); }
     pA.y += Math.sin(time * .9 + r.c * 20) * .04;
